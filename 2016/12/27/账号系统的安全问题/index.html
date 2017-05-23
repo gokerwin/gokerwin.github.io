@@ -68,7 +68,7 @@
 <link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="账号系统,安全,架构设计," />
 
 
 
@@ -94,7 +94,7 @@
 <meta property="og:description" content="1、密码存储
 前端传输到后端的密码必须是经过加密处理，比如MD5(明文)
 后端存储密码加盐、sha256: sha256(MD5(前端参数)+salt)前端对密码的传输必须做一定程度的加密处理，预防最简单的抓包，常见的方式就是直接MD5, 当然可以更复杂，比如手机号登陆可以为MD5(MD5(passwd)+phone)等。现在对于安全比较重视的团队基本都开始采用https了。网上也有关于https">
-<meta property="og:updated_time" content="2016-12-27T10:48:18.000Z">
+<meta property="og:updated_time" content="2017-05-23T09:49:00.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="账号系统的安全问题">
 <meta name="twitter:description" content="1、密码存储
@@ -218,22 +218,22 @@
         </li>
       
         
-        <li class="menu-item menu-item-archives">
-          <a href="/archives" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            归档
-          </a>
-        </li>
-      
-        
         <li class="menu-item menu-item-tags">
           <a href="/tags" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
             
             标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
           </a>
         </li>
       
@@ -305,7 +305,7 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-12-27T18:48:18+08:00">
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-12-27T00:00:00+08:00">
                 2016-12-27
               </time>
             
@@ -315,6 +315,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/架构设计/" itemprop="url" rel="index">
+                    <span itemprop="name">架构设计</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -418,14 +440,20 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/账号系统/" rel="tag"># 账号系统</a>
+          
+            <a href="/tags/安全/" rel="tag"># 安全</a>
+          
+            <a href="/tags/架构设计/" rel="tag"># 架构设计</a>
+          
+        </div>
+      
 
       
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
-            
-              <a href="/2016/12/09/hello-world/" rel="next" title="Hello World">
-                <i class="fa fa-chevron-left"></i> Hello World
-              </a>
             
           </div>
 
@@ -504,7 +532,7 @@
         
           
             <div class="site-state-item site-state-posts">
-              <a href="/archives">
+              <a href="/">
                 <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
@@ -512,7 +540,21 @@
           
 
           
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
 
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
           
 
         </nav>
