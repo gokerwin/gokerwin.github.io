@@ -1,0 +1,857 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Unix,IO," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="一直以来对Unix的各种IO模型，同步IO、异步IO、阻塞IO、非阻塞IO、IO多路复用（select、poll、epoll）都傻傻不分清，通过啃《Unix高级环境编程》和《Unix网络编程》两本书，对这些概念和原理有了很好的理解，在此梳理下，也帮助那些还存在疑惑的同学解解惑。
+IO模型的分类：
+
+同步IO
+异步IO
+阻塞IO
+非阻塞IO
+
+先整体、初略的了解下IO模型的分类，然后通过下面的学习，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="我理解的Unix IO模型">
+<meta property="og:url" content="http://gokerwin.github.io/2017/05/26/我理解的Unix IO模型/index.html">
+<meta property="og:site_name" content="kerwin的博客">
+<meta property="og:description" content="一直以来对Unix的各种IO模型，同步IO、异步IO、阻塞IO、非阻塞IO、IO多路复用（select、poll、epoll）都傻傻不分清，通过啃《Unix高级环境编程》和《Unix网络编程》两本书，对这些概念和原理有了很好的理解，在此梳理下，也帮助那些还存在疑惑的同学解解惑。
+IO模型的分类：
+
+同步IO
+异步IO
+阻塞IO
+非阻塞IO
+
+先整体、初略的了解下IO模型的分类，然后通过下面的学习，">
+<meta property="og:image" content="http://obpbfcu84.bkt.clouddn.com/blog_%E9%98%BB%E5%A1%9EIO">
+<meta property="og:image" content="http://obpbfcu84.bkt.clouddn.com/blog_%E9%9D%9E%E9%98%BB%E5%A1%9EIO.png">
+<meta property="og:image" content="http://obpbfcu84.bkt.clouddn.com/blog_IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8.png">
+<meta property="og:image" content="http://obpbfcu84.bkt.clouddn.com/blog_%E5%BC%82%E6%AD%A5IO.png">
+<meta property="og:image" content="http://obpbfcu84.bkt.clouddn.com/blog_%E4%BA%94%E4%B8%AAIO%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94.png">
+<meta property="og:updated_time" content="2017-05-25T17:34:00.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="我理解的Unix IO模型">
+<meta name="twitter:description" content="一直以来对Unix的各种IO模型，同步IO、异步IO、阻塞IO、非阻塞IO、IO多路复用（select、poll、epoll）都傻傻不分清，通过啃《Unix高级环境编程》和《Unix网络编程》两本书，对这些概念和原理有了很好的理解，在此梳理下，也帮助那些还存在疑惑的同学解解惑。
+IO模型的分类：
+
+同步IO
+异步IO
+阻塞IO
+非阻塞IO
+
+先整体、初略的了解下IO模型的分类，然后通过下面的学习，">
+<meta name="twitter:image" content="http://obpbfcu84.bkt.clouddn.com/blog_%E9%98%BB%E5%A1%9EIO">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://gokerwin.github.io/2017/05/26/我理解的Unix IO模型/"/>
+
+
+
+
+
+  <title> 我理解的Unix IO模型 | kerwin的博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?b2d970006b65ec39cc8b801436cc61ea";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">kerwin的博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+    
+      <p class="site-subtitle">深入一点，你会更快乐</p>
+    
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://gokerwin.github.io/2017/05/26/我理解的Unix IO模型/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="kerwin">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="http://obpbfcu84.bkt.clouddn.com/header1.png">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="kerwin的博客">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="kerwin的博客" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                我理解的Unix IO模型
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-05-26T00:00:00+08:00">
+                2017-05-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Unix学习/" itemprop="url" rel="index">
+                    <span itemprop="name">Unix学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一直以来对Unix的各种IO模型，同步IO、异步IO、阻塞IO、非阻塞IO、IO多路复用（select、poll、epoll）都傻傻不分清，通过啃《Unix高级环境编程》和《Unix网络编程》两本书，对这些概念和原理有了很好的理解，在此梳理下，也帮助那些还存在疑惑的同学解解惑。</p>
+<p>IO模型的分类：</p>
+<ul>
+<li>同步IO</li>
+<li>异步IO</li>
+<li>阻塞IO</li>
+<li>非阻塞IO</li>
+</ul>
+<p>先整体、初略的了解下IO模型的分类，然后通过下面的学习，将我们经常用到的IO给他一一归类，帮助理解。</p>
+<h4 id="概念解析："><a href="#概念解析：" class="headerlink" title="概念解析："></a>概念解析：</h4><ol>
+<li>用户空间和内核空间：操作系统都采用虚拟存储器，对32位操作系统，它的寻址空间（虚拟存储空间）为4G（2的32次方）。操心系统将虚拟空间划分为两部分，将最高的1G字节（从虚拟地址0xC0000000到0xFFFFFFFF），供内核使用，称为内核空间，而将较低的3G字节（从虚拟地址0x00000000到0xBFFFFFFF），供各个进程使用，称为用户空间。</li>
+<li>进程切换：保存处理机上下文，包括程序计数器和其他寄存器、更新PCB信息、把进程的PCB移入相应的队列，如就绪或某事件阻塞队列、选择另一个进程执行，并更新其PCB、更新内存管理的数据结构、恢复处理机上下文。总而言之就是很耗资源。</li>
+<li>进程的阻塞：正在执行的进程，由于期待的某些事件未发生，由系统自动执行阻塞原语(Block)，由运行状态变为阻塞状态。进程的阻塞是进程自身的一种主动行为，当进程进入阻塞状态，是不占用CPU资源的。</li>
+<li>文件描述符：一个非负整数。实际上，它是一个索引值，指向内核为每一个进程所维护的该进程打开文件的记录表。</li>
+<li>缓存 I/O：又被称作标准 I/O，大多数文件系统的默认I/O操作都是缓存I/O。在Linux的缓存I/O机制中，操作系统会将I/O的数据缓存在文件系统的页缓存中，也就是说，数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。缺点：数据在传输过程中需要在应用程序地址空间和内核进行多次数据拷贝操作，这些数据拷贝操作所带来的 CPU 以及内存开销是非常大的。</li>
+</ol>
+<h4 id="IO操作流程："><a href="#IO操作流程：" class="headerlink" title="IO操作流程："></a>IO操作流程：</h4><p>对于一次IO访问（以read举例），数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。所以一个read操作会经历两个阶段：</p>
+<ol>
+<li>等待数据准备 (Waiting for the data to be ready)</li>
+<li>将数据从内核拷贝到进程中 (Copying the data from the kernel to the process)</li>
+</ol>
+<p>正因为这两个阶段，linux系统产生了下面四种网络模式的方案：</p>
+<ul>
+<li>阻塞 I/O（blocking IO）</li>
+<li>非阻塞 I/O（nonblocking IO）</li>
+<li>I/O 多路复用（IO multiplexing）</li>
+<li>异步 I/O（asynchronous IO）</li>
+</ul>
+<h4 id="阻塞IO"><a href="#阻塞IO" class="headerlink" title="阻塞IO"></a>阻塞IO</h4><p><img src="http://obpbfcu84.bkt.clouddn.com/blog_%E9%98%BB%E5%A1%9EIO" alt="阻塞IO"></p>
+<p>在linux中，默认情况下所有的socket都是blocking，一个典型的读操作流程：当用户进程调用了recvfrom系统调用，kernel就开始了IO的第一个阶段：准备数据（对于网络IO来说，很多时候数据在一开始还没有到达。比如，还没有收到一个完整的UDP包。这个时候kernel就要等待足够的数据到来）。这个过程需要等待，也就是说数据被拷贝到操作系统内核的缓冲区中是需要一个过程的。而在用户进程这边，整个进程会被阻塞（当然，是进程自己选择的阻塞）。当kernel一直等到数据准备好了，它就会将数据从kernel中拷贝到用户内存，然后kernel返回结果，用户进程才解除block的状态，重新运行起来。所以，blocking IO的特点就是在IO执行的两个阶段都被block了。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">while</span>((n = read(r_fd, buf, BUF_SIZE)) &gt; <span class="number">0</span>)</div><div class="line">    <span class="keyword">if</span>(write(w_fd, buf, n) != n)</div><div class="line">        err_sys(<span class="string">"write error"</span>);</div></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//创建（socket）、绑定（bind）、监听（listen）到循环接受（accept）</span></div><div class="line"><span class="comment">//当从一个客户端 socket 描述符读取数据时，发生阻塞，就导致了无法处理其他客户端的请求了</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> lfd, cfd;</div><div class="line">    <span class="keyword">struct</span> sockaddr_in serv_addr,clin_addr;</div><div class="line">    <span class="keyword">socklen_t</span> clin_len;</div><div class="line">    <span class="keyword">char</span> recvbuf[BUFSIZE];</div><div class="line">    <span class="keyword">int</span> len;</div><div class="line">   </div><div class="line">    lfd = socket(AF_INET,SOCK_STREAM,<span class="number">0</span>);</div><div class="line">       </div><div class="line">    serv_addr.sin_family = AF_INET;</div><div class="line">    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);</div><div class="line">    serv_addr.sin_port = htons(SERV_PORT);</div><div class="line">      </div><div class="line">    bind(lfd, (<span class="keyword">struct</span> sockaddr *)&amp;serv_addr, <span class="keyword">sizeof</span>(serv_addr));</div><div class="line">       </div><div class="line">    listen(lfd, <span class="number">128</span>);</div><div class="line">  </div><div class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</div><div class="line">        clin_len = <span class="keyword">sizeof</span>(clin_addr);</div><div class="line">        cfd = accept(lfd, (<span class="keyword">struct</span> sockaddr *)&amp;clin_addr, &amp;clin_len);</div><div class="line">        <span class="keyword">while</span>(len = read(cfd,recvbuf,BUFSIZE))&#123;</div><div class="line">            write(STDOUT_FILENO,recvbuf,len);<span class="comment">//把客户端输入的内容输出在终端</span></div><div class="line">            <span class="comment">// 只有当客户端输入 stop 就停止当前客户端的连接</span></div><div class="line">            <span class="keyword">if</span> (strncasecmp(recvbuf,<span class="string">"stop"</span>,<span class="number">4</span>) == <span class="number">0</span>)&#123;</div><div class="line">                close(cfd);</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">  </div><div class="line">    close(lfd); </div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="非阻塞IO"><a href="#非阻塞IO" class="headerlink" title="非阻塞IO"></a>非阻塞IO</h4><p><img src="http://obpbfcu84.bkt.clouddn.com/blog_%E9%9D%9E%E9%98%BB%E5%A1%9EIO.png" alt="非阻塞IO"></p>
+<p>linux下，可以通过设置socket使其变为non-blocking。当对一个non-blocking socket执行读操作时，流程：当用户进程发出read操作时，如果kernel中的数据还没有准备好，那么它并不会block用户进程，而是立刻返回一个error。从用户进程角度讲 ，它发起一个read操作后，并不需要等待，而是马上就得到了一个结果。用户进程判断结果是一个error时，它就知道数据还没有准备好，于是它可以再次发送read操作。一旦kernel中的数据准备好了，并且又再次收到了用户进程的system call，那么它马上就将数据拷贝到了用户内存，然后返回。所以，nonblocking IO的特点是用户进程需要不断的主动询问kernel数据好了没有。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">参考 APUE 399页代码示例</div></pre></td></tr></table></figure>
+<h4 id="I-O-多路复用"><a href="#I-O-多路复用" class="headerlink" title="I/O 多路复用"></a>I/O 多路复用</h4><p><img src="http://obpbfcu84.bkt.clouddn.com/blog_IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8.png" alt=""></p>
+<p>IO multiplexing就是我们说的select，poll，epoll，也称为event driven IO。select/epoll的好处就在于单个process就可以同时处理多个网络连接的IO。它的基本原理就是select，poll，epoll这个function会不断的轮询所负责的所有socket，当某个socket有数据到达了，就通知用户进程。<br>当用户进程调用了select，那么整个进程会被block，而同时，kernel会“监视”所有select负责的socket，当任何一个socket中的数据准备好了，select就会返回。这个时候用户进程再调用read操作，将数据从kernel拷贝到用户进程。所以，I/O 多路复用的特点是通过一种机制一个进程能同时等待多个文件描述符，而这些文件描述符（套接字描述符）其中的任意一个进入读就绪状态，select()函数就可以返回。需要使用两个system call (select 和 recvfrom)<br>在IO multiplexing Model中，实际中，对于每一个socket，一般都设置成为non-blocking，但是，如上图所示，整个用户的process其实是一直被block的。只不过process是被select这个函数block，而不是被socket IO给block。</p>
+<h4 id="异步-IO"><a href="#异步-IO" class="headerlink" title="异步 IO"></a>异步 IO</h4><p><img src="http://obpbfcu84.bkt.clouddn.com/blog_%E5%BC%82%E6%AD%A5IO.png" alt="异步IO"></p>
+<p>用户进程发起read操作之后，立刻就可以开始去做其它的事。而另一方面，从kernel的角度，当它受到一个asynchronous read之后，首先它会立刻返回，所以不会对用户进程产生任何block。然后，kernel会等待数据准备完成，然后将数据拷贝到用户内存，当这一切都完成之后，kernel会给用户进程发送一个signal，告诉它read操作完成了。</p>
+<h4 id="阻塞IO与非阻塞IO区别"><a href="#阻塞IO与非阻塞IO区别" class="headerlink" title="阻塞IO与非阻塞IO区别"></a>阻塞IO与非阻塞IO区别</h4><p>blocking和non-blocking的区别：<br>调用blocking IO会一直block住对应的进程直到操作完成，而non-blocking IO在kernel准备数据的情况下会立刻返回。</p>
+<h4 id="同步IO与异步IO区别"><a href="#同步IO与异步IO区别" class="headerlink" title="同步IO与异步IO区别"></a>同步IO与异步IO区别</h4><p><img src="http://obpbfcu84.bkt.clouddn.com/blog_%E4%BA%94%E4%B8%AAIO%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94.png" alt="五个IO模型对比"></p>
+<p>synchronous IO和asynchronous IO的区别：<br>两者的区别就在于synchronous IO做”IO operation”的时候会将process阻塞。</p>
+<p>按照这个定义，之前所述的blocking IO，non-blocking IO，IO multiplexing都属于synchronous IO。</p>
+<p>有人会说，non-blocking IO并没有被block啊。这里有个非常“狡猾”的地方，定义中所指的”IO operation”是指真实的IO操作，就是例子中的recvfrom这个system call。non-blocking IO在执行recvfrom这个system call的时候，如果kernel的数据没有准备好，这时候不会block进程。但是，当kernel中数据准备好的时候，recvfrom会将数据从kernel拷贝到用户内存中，这个时候进程是被block了，在这段时间内，进程是被block的。</p>
+<p>而asynchronous IO则不一样，当进程发起IO 操作之后，就直接返回再也不理睬了，直到kernel发送一个信号，告诉进程说IO完成。在这整个过程中，进程完全没有被block。</p>
+<h4 id="I-O-多路复用之select、poll、epoll详解"><a href="#I-O-多路复用之select、poll、epoll详解" class="headerlink" title="I/O 多路复用之select、poll、epoll详解"></a>I/O 多路复用之select、poll、epoll详解</h4><p>select，poll，epoll都是IO多路复用的机制。IO多路复用就是通过某种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作。但select，poll，epoll本质上都是同步IO，因为他们都需要在读写事件就绪后自己负责进行读写，也就是说这个读写过程是阻塞的。</p>
+<h5 id="1-select"><a href="#1-select" class="headerlink" title="#1. select"></a>#1. select</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">select</span> <span class="params">(<span class="keyword">int</span> maxfdp1, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, <span class="keyword">struct</span> timeval *timeout)</span></span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">FD_ISSET</span><span class="params">(<span class="keyword">int</span> fd, fd_set *fdset)</span></span>;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_CLR</span><span class="params">(<span class="keyword">int</span> fd, fd_set *fdset)</span></span>;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_SET</span><span class="params">(<span class="keyword">int</span> fd, fd_set *fdset)</span></span>;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_ZERO</span><span class="params">(fd_set *fdset)</span></span>;</div></pre></td></tr></table></figure>
+<ul>
+<li>select函数监视的文件描述符分3类，分别是writefds、readfds、和exceptfds。调用后select函数会阻塞，直到有描述符就绪（有数据 可读、可写、或者有except），或者超时（timeout指定等待时间，如果立即返回设为null即可），函数返回。当select函数返回后，可以通过遍历fdset，来找到就绪的描述符。</li>
+<li><code>FD_ZERO</code> 把 <code>fd_set</code> 所有位设置为 0；<code>FD_SET</code> 把一个位设置为 1；<code>FD_ISSET</code> 判断一个位是否为 1。 </li>
+<li>调用 select 时：内核判断 <code>fd_set</code> 里的位并把各个 <code>fd_set</code> 里所有值为 1 的位记录下来，然后把 <code>fd_set</code> 全部设置成 0 ；一个描述符上有对应的事件发生时，把对应 <code>fd_set</code> 里代表这个描述符的位设置为 1 。所以，在下一次调用 select 前，我们不得不把已经被内核改掉的 <code>fd_set</code> 全部重新设置一下。</li>
+<li>在 select 返回之后：我们同样用 <code>FD_ISSET</code> 判断各个我们关心的位是 0 还是 1 ，这时的含义是，这个位是否是发生了我们关心的事件。返回值：0 超时， -1 出错， 正数 已准备好的描述符。默认能监视的文件描述符不能大于 1024，<code>FD_SETSIZE</code></li>
+</ul>
+<p>优缺点：</p>
+<ul>
+<li>select目前几乎在所有的平台上支持，其良好跨平台支持也是它的一个优点。select的一个缺点在于单个进程能够监视的文件描述符的数量存在最大限制，在Linux上一般为1024，可以通过修改宏定义甚至重新编译内核的方式提升这一限制，但是这样也会造成效率的降低。select 是每次都会线性扫描整个<code>fd_set</code>，集合越大速度越慢，所以性能会比较差。  </li>
+<li>select 函数返回时只能看见已准备好的描述符数量，至于是哪个描述符准备好了需要循环用 <code>FD_ISSET</code> 来检查，当未准备好的描述符很多而准备好的很少时，效率比较低。<br>select 函数每次执行的时候，都把参数里传入的三个 <code>fd_set</code> 从用户空间复制到内核空间。而每次 <code>fd_set</code> 里要监视的描述符变化不大时，全部重新复制一遍并不划算。同样在每次都是未准备好的描述符很多而准备好的很少时，调用 select 会很频繁，用户/内核间的的数据复制就成了一个大的开销。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 这个例子要监控文件描述符 3, 4 的可读状态，以及 4, 5 的可写状态</span></div><div class="line"><span class="comment">// 初始化两个 fd_set 以及 timeval</span></div><div class="line">fd_set read_set, write_set;</div><div class="line">FD_ZERO(read_set);</div><div class="line">FD_ZERO(write_set);</div><div class="line">timeval t;</div><div class="line">t.tv_sec = <span class="number">5</span>;   <span class="comment">// 超时为 5 秒</span></div><div class="line">t.tv_usec = <span class="number">0</span>;  <span class="comment">// 加 0 微秒</span></div><div class="line"></div><div class="line"><span class="comment">// 设置好两个 fd_set</span></div><div class="line"><span class="keyword">int</span> fd1 = <span class="number">3</span>;</div><div class="line"><span class="keyword">int</span> fd2 = <span class="number">4</span>;</div><div class="line"><span class="keyword">int</span> fd3 = <span class="number">5</span>;</div><div class="line"><span class="keyword">int</span> maxfdp1 = <span class="number">5</span> + <span class="number">1</span>;</div><div class="line">FD_SET(fd1, &amp;read_set);</div><div class="line">FD_SET(fd2, &amp;read_set);</div><div class="line">FD_SET(fd2, &amp;write_set);</div><div class="line">FD_SET(fd3, &amp;write_set);</div><div class="line"></div><div class="line"><span class="comment">// 准备备用的 fd_set</span></div><div class="line">fd_set r_temp = read_set;</div><div class="line">fd_set w_temp = write_set;</div><div class="line"></div><div class="line"><span class="keyword">while</span>(<span class="literal">true</span>)&#123;</div><div class="line">    <span class="comment">// 每次都要重新设置放入 select 的 fd_set</span></div><div class="line">    read_set = r_temp;</div><div class="line">    write_set = w_temp;</div><div class="line"></div><div class="line">    <span class="comment">// 使用 select</span></div><div class="line">    <span class="keyword">int</span> n = select(maxfdp1, &amp;read_set, &amp;write_set, <span class="literal">NULL</span>, &amp;t);</div><div class="line"></div><div class="line">    <span class="comment">// 上面的 select 函数会一直阻塞，直到</span></div><div class="line">    <span class="comment">// 3, 4 可读以及 4, 5 可写这四件事中至少一项发生</span></div><div class="line">    <span class="comment">// 或者等待时间到达 5 秒，返回 0</span></div><div class="line"></div><div class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;maxfdp1 &amp;&amp; n&gt;<span class="number">0</span>; i++)&#123;</div><div class="line">        <span class="keyword">if</span>(FD_ISSET(i, &amp;read_set))&#123;</div><div class="line">            n--;</div><div class="line">            <span class="keyword">if</span>(i==fd1)</div><div class="line">                prinf(<span class="string">"描述符 3 可读"</span>);</div><div class="line">            <span class="keyword">if</span>(i==fd2)</div><div class="line">                prinf(<span class="string">"描述符 4 可读"</span>);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span>(FD_ISSET(i, &amp;write_set))&#123;</div><div class="line">            n--;</div><div class="line">            <span class="keyword">if</span>(i==fd2)</div><div class="line">                prinf(<span class="string">"描述符 3 可写"</span>);</div><div class="line">            <span class="keyword">if</span>(i==fd3)</div><div class="line">                prinf(<span class="string">"描述符 4 可写"</span>);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="comment">// 上面的 printf 语句换成对应的 read 或者 write 函数就</span></div><div class="line">    <span class="comment">// 可以立即读取或者写入相应的描述符而不用等待</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h5 id="2-poll"><a href="#2-poll" class="headerlink" title="#2. poll"></a>#2. poll</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">poll</span> <span class="params">(<span class="keyword">struct</span> pollfd *fds, <span class="keyword">unsigned</span> <span class="keyword">int</span> nfds, <span class="keyword">int</span> timeout)</span></span>;</div><div class="line"></div><div class="line"><span class="keyword">struct</span> pollfd &#123;</div><div class="line">    <span class="keyword">int</span> fd; <span class="comment">/* file descriptor */</span></div><div class="line">    <span class="keyword">short</span> events; <span class="comment">/* requested events to watch */</span></div><div class="line">    <span class="keyword">short</span> revents; <span class="comment">/* returned events witnessed */</span></div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<ul>
+<li>不同与select使用三个位图来表示三个fdset的方式，poll使用一个 pollfd的指针实现。pollfd结构包含了要监视的event和发生的event，不再使用select“参数-值”传递的方式。</li>
+<li>同时，pollfd并没有最大数量限制（但是数量过大后性能也是会下降）。 和select函数一样，poll返回后，需要轮询pollfd来获取就绪的描述符。通过遍历文件描述符来获取已经就绪的socket。</li>
+</ul>
+<p>优缺点：</p>
+<ul>
+<li>相比 select ，poll 有这些优点：由于 poll 在 pollfd 里用 int fd 来表示文件描述符而不像 select 里用的 <code>fd_set</code> 来分别表示描述符，所以没有必须小于 1024 的限制，也没有数量限制；</li>
+<li>由于 poll 用 events 表示期待的事件，通过修改 revents 来表示发生的事件，所以不需要像 select 在每次调用前重新设置描述符和期待的事件。</li>
+<li>poll() 函数不会受到socket描述符上的O_NDELAY标记和O_NONBLOCK标记的影响和制约</li>
+<li>除此之外，poll 和 select 几乎相同。在 poll 返回后，需要遍历 fdarray 来检查各个 pollfd 里的 revents 是否发生了期待的事件；每次调用 poll 时，把 fdarray 复制到内核空间。在描述符太多而每次准备好的较少时，poll 有同样的性能问题。</li>
+</ul>
+<h5 id="3-epoll-linux2-6版本之后"><a href="#3-epoll-linux2-6版本之后" class="headerlink" title="#3. epoll(linux2.6版本之后)"></a>#3. epoll(linux2.6版本之后)</h5><figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">int epoll_create(int size)；//创建一个epoll的句柄，size用来告诉内核这个监听的数目一共有多大</div><div class="line">int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)；</div><div class="line">int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);</div><div class="line">struct epoll_event &#123;</div><div class="line">  __uint32_t events;  /* Epoll events */</div><div class="line">  epoll_data_t data;  /* User data variable */</div><div class="line">&#125;;</div><div class="line"></div><div class="line">//events可以是以下几个宏的集合：</div><div class="line">EPOLLIN ：表示对应的文件描述符可以读（包括对端SOCKET正常关闭）；</div><div class="line">EPOLLOUT：表示对应的文件描述符可以写；</div><div class="line">EPOLLPRI：表示对应的文件描述符有紧急的数据可读（这里应该表示有带外数据到来）；</div><div class="line">EPOLLERR：表示对应的文件描述符发生错误；</div><div class="line">EPOLLHUP：表示对应的文件描述符被挂断；</div><div class="line">EPOLLET： 将EPOLL设为边缘触发(Edge Triggered)模式，这是相对于水平触发(Level Triggered)来说的。</div><div class="line">EPOLLONESHOT：只监听一次事件，当监听完这次事件之后，如果还需要继续监听这个socket的话，需要再次把这个socket加入到EPOLL队列里</div></pre></td></tr></table></figure>
+<ul>
+<li>epoll更加灵活，没有描述符限制。epoll使用一个文件描述符管理多个描述符，将用户关心的文件描述符的事件存放到内核的一个事件表中，这样在用户空间和内核空间的copy只需一次。</li>
+<li>epfd：是epoll_create()的返回值。</li>
+<li>op：表示op操作，用三个宏来表示：添加<code>EPOLL_CTL_ADD</code>，删除<code>EPOLL_CTL_DEL</code>，修改<code>EPOLL_CTL_MOD</code>。分别添加、删除和修改对fd的监听事件。</li>
+<li>fd：是需要监听的fd（文件描述符）</li>
+<li><code>epoll_event</code>：是告诉内核需要监听什么事，struct <code>epoll_event</code>结构体里，除了期待的事件外，还有一个 data ，是一个 union，它是用来让我们在得到下面第三个函数的返回值以后方便的定位文件描述符的。</li>
+<li>等待epfd上的io事件，最多返回maxevents个事件。参数events用来从内核得到事件的集合，maxevents告之内核这个events有多大，这个maxevents的值不能大于创建epoll_create()时的size，参数timeout是超时时间（毫秒，0会立即返回，-1将不确定，也有说法说是永久阻塞）。该函数返回需要处理的事件数目，如返回0表示已超时。</li>
+</ul>
+<p>优缺点：</p>
+<ul>
+<li>所以 epoll 解决了 poll 和 select 的问题：在 <code>epoll_ctl</code> 的时候把数据复制到内核空间，这保证了每个描述符和事件一定只会被复制到内核空间一次；每次调用 <code>epoll_wait</code> 都不会复制新数据到内核空间。相比之下，select 每次调用都会把三个 <code>fd_set</code> 复制一遍；poll 每次调用都会把 fdarray 复制一遍。</li>
+<li><code>epoll_wait</code> 返回 n ，那么只需要做 n 次循环，可以保证遍历的每一次都是有意义的。相比之下，select 需要做至少 n 次至多 maxfdp1 次循环；poll 需要遍历完 fdarray 即做 nfds 次循环。</li>
+<li><p>在内部实现上，epoll 使用了回调的方法。调用 <code>epoll_ctl</code> 时，就是注册了一个事件：在集合中放入文件描述符以及事件数据，并且加上一个回调函数。一旦文件描述符上的对应事件发生，就会调用回调函数，这个函数会把这个文件描述符加入到就绪队列上。当你调用 <code>epoll_wait</code> 时，它只是在查看就绪队列上是否有内容，有的话就返回给你的程序。select() poll() <code>epoll_wait()</code> 三个函数在操作系统看来，都是睡眠一会儿然后判断一会儿的循环，但是 select 和 poll 在醒着的时候要遍历整个文件描述符集合，而 <code>epoll_wait</code> 只是看看就绪队列是否为空而已。这是 epoll 高性能的理由，使得其 IO 的效率不会像使用轮询的 select/poll 随着描述符增加而大大降低。</p>
+</li>
+<li><p>注 1 ：select/poll/epoll_wait 三个函数的等待超时时间都有一样的特性：等待时间设置为 0 时函数不阻塞而是立即返回，不论是否有文件描述符已准备好；poll/epoll_wait 中的 timeout 为 -1，select 中的 timeout 为 NULL 时，则无限等待，直到有描述符已准备好才会返回。</p>
+</li>
+<li><p>注 2 ：有的新手会把文件描述符是否标记为阻塞 I/O 等同于 I/O 多路复用函数是否阻塞。其实文件描述符是否标记为阻塞，决定了你 read 或 write 它时如果它未准备好是阻塞等待，还是立即返回 EAGAIN ；而 I/O 多路复用函数除非你把 timeout 设置为 0 ，否则它总是会阻塞住你的程序。</p>
+</li>
+<li><p>注 3 ：上面的例子只是入门，可能是不准确或不全面的：一是数据要立即处理防止丢失；二是 EPOLLIN/EPOLLOUT 不完全等同于可读可写事件，具体要去搜索 poll/epoll 的事件具体有哪些；三是大多数实际例子里，比如一个 tcp server ，都会在运行中不断增加/删除的文件描述符而不是记住固定的 3 4 5 几个描述符（用这种例子更能看出 epoll 的优势）；四是 epoll 的优势更多的体现在处理大量闲连接的情况，如果场景是处理少量短连接，用 select 反而更好，而且用 select 的代码能运行在所有平台上。</p>
+</li>
+</ul>
+<p>epoll两种模式：</p>
+<ul>
+<li>epoll对文件描述符的操作有两种模式：LT（level trigger）和ET（edge trigger）。LT模式是默认模式.</li>
+<li>LT：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。下次调用epoll_wait时，会再次响应应用程序并通知此事件</li>
+<li>ET：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序必须立即处理该事件。如果不处理，下次调用epoll_wait时，不会再次响应应用程序并通知此事件。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 这个例子要监控文件描述符 3, 4 的可读状态，以及 4, 5 的可写状态</span></div><div class="line"></div><div class="line"><span class="comment">/* 通过 epoll_create 创建 epoll 描述符 */</span></div><div class="line"><span class="keyword">int</span> epfd = epoll_create(<span class="number">4</span>);</div><div class="line"></div><div class="line"><span class="keyword">int</span> fd1 = <span class="number">3</span>;</div><div class="line"><span class="keyword">int</span> fd2 = <span class="number">4</span>;</div><div class="line"><span class="keyword">int</span> fd3 = <span class="number">5</span>;</div><div class="line"></div><div class="line"><span class="comment">/* 通过 epoll_ctl 注册好四个事件 */</span></div><div class="line"><span class="keyword">struct</span> epoll_event ev1;</div><div class="line">ev1.events = EPOLLIN;      <span class="comment">// 期待它的可读事件发生</span></div><div class="line">ev1.data   = fd1;          <span class="comment">// 我们通常就把 data 设置为 fd ，方便以后查看</span></div><div class="line">epoll_ctl(epfd, EPOLL_CTL_ADD, fd1, &amp;ev1);  <span class="comment">// 添加到事件表</span></div><div class="line"></div><div class="line"><span class="keyword">struct</span> epoll_event ev2;</div><div class="line">ev2.events = EPOLLIN;</div><div class="line">ev2.data   = fd2;</div><div class="line">epoll_ctl(epfd, EPOLL_CTL_ADD, fd2, &amp;ev2);</div><div class="line"></div><div class="line"><span class="keyword">struct</span> epoll_event ev3;</div><div class="line">ev3.events = EPOLLOUT;     <span class="comment">// 期待它的可写事件发生</span></div><div class="line">ev3.data   = fd2;</div><div class="line">epoll_ctl(epfd, EPOLL_CTL_ADD, fd2, &amp;ev3);</div><div class="line"></div><div class="line"><span class="keyword">struct</span> epoll_event ev4;</div><div class="line">ev4.events = EPOLLOUT;</div><div class="line">ev4.data   = fd3;</div><div class="line">epoll_ctl(epfd, EPOLL_CTL_ADD, fd3, &amp;ev4);</div><div class="line"></div><div class="line"><span class="comment">/* 通过 epoll_wait 等待事件 */</span></div><div class="line"># DEFINE MAXEVENTS <span class="number">4</span></div><div class="line"><span class="keyword">struct</span> epoll_event result_events[MAXEVENTS];</div><div class="line"></div><div class="line"><span class="keyword">while</span>(<span class="literal">true</span>)&#123;</div><div class="line">    <span class="keyword">int</span> n = epoll_wait(epfd, &amp;result_events, MAXEVENTS, <span class="number">5000</span>);</div><div class="line"></div><div class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;n; n--)&#123;</div><div class="line">        <span class="comment">// result_events[i] 一定是 ev1 到 ev4 中的一个</span></div><div class="line">        <span class="keyword">if</span>(result_events[i].events&amp;EPOLLIN)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"描述符 %d 可读"</span>, result_events[i].fd);</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(result_events[i].events&amp;EPOLLOUT)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"描述符 %d 可写"</span>, result_events[i].fd)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="http://obpbfcu84.bkt.clouddn.com/blog/public/wechat.png" alt="kerwin WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="http://obpbfcu84.bkt.clouddn.com/blog/public/alipay.png" alt="kerwin Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Unix/" rel="tag"># Unix</a>
+          
+            <a href="/tags/IO/" rel="tag"># IO</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/23/常见的排序和查找算法总结/" rel="next" title="常见的排序和查找算法总结">
+                <i class="fa fa-chevron-left"></i> 常见的排序和查找算法总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/26/TCP协议理解/" rel="prev" title="TCP/IP协议理解">
+                TCP/IP协议理解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="http://obpbfcu84.bkt.clouddn.com/header1.png"
+               alt="kerwin" />
+          <p class="site-author-name" itemprop="name">kerwin</p>
+          <p class="site-description motion-element" itemprop="description">用博客，改变一点点的自己</p>
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#概念解析："><span class="nav-number">1.</span> <span class="nav-text">概念解析：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#IO操作流程："><span class="nav-number">2.</span> <span class="nav-text">IO操作流程：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#阻塞IO"><span class="nav-number">3.</span> <span class="nav-text">阻塞IO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#非阻塞IO"><span class="nav-number">4.</span> <span class="nav-text">非阻塞IO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#I-O-多路复用"><span class="nav-number">5.</span> <span class="nav-text">I/O 多路复用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#异步-IO"><span class="nav-number">6.</span> <span class="nav-text">异步 IO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#阻塞IO与非阻塞IO区别"><span class="nav-number">7.</span> <span class="nav-text">阻塞IO与非阻塞IO区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#同步IO与异步IO区别"><span class="nav-number">8.</span> <span class="nav-text">同步IO与异步IO区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#I-O-多路复用之select、poll、epoll详解"><span class="nav-number">9.</span> <span class="nav-text">I/O 多路复用之select、poll、epoll详解</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-select"><span class="nav-number">9.1.</span> <span class="nav-text">#1. select</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-poll"><span class="nav-number">9.2.</span> <span class="nav-text">#2. poll</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-epoll-linux2-6版本之后"><span class="nav-number">9.3.</span> <span class="nav-text">#3. epoll(linux2.6版本之后)</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kerwin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+</body>
+</html>
